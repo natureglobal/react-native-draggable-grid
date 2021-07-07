@@ -1,1 +1,4 @@
-export type { IDraggableGridProps, DraggableGrid } from './draggable-grid'
+export type { IDraggableGridProps } from './draggable-grid'
+
+import { DraggableGrid } from './draggable-grid'
+export default DraggableGrid
