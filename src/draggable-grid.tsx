@@ -29,6 +29,7 @@ export interface IDraggableGridProps<DataType extends IBaseItemType> {
   renderItem: (item: DataType, order: number) => React.ReactElement<any>
   style?: ViewStyle
   itemHeight?: number
+  onUpdateGridItemSize?:(width: number, height: number) => void
   dragStartAnimation?: StyleProp<any>
   onItemPress?: (item: DataType) => void
   onDragStart?: (item: DataType) => void
@@ -79,6 +80,8 @@ export const DraggableGrid = function<DataType extends IBaseItemType>(
       let blockHeight = props.itemHeight || blockWidth
       setBlockWidth(blockWidth)
       setBlockHeight(blockHeight)
+      props.onUpdateGridItemSize && props.onUpdateGridItemSize(blockWidth, blockHeight);
+
       setGridLayout(event.nativeEvent.layout)
       setHadInitBlockSize(true)
     }
