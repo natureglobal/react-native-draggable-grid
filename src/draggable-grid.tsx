@@ -23,6 +23,7 @@ interface IBaseItemType {
 }
 
 export interface IDraggableGridProps<DataType extends IBaseItemType> {
+  draggable: boolean
   numColumns: number
   data: DataType[]
   renderItem: (item: DataType, order: number) => React.ReactElement<any>
@@ -247,6 +248,7 @@ export const DraggableGrid = function<DataType extends IBaseItemType>(
     return Math.sqrt(Math.pow(xDistance, 2) + Math.pow(yDistance, 2))
   }
   function setActiveBlock(itemIndex: number, item: DataType) {
+    if (!props.draggable) return
     if (item.disabledDrag) return
 
     setPanResponderCapture(true)
