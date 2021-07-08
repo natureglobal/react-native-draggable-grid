@@ -26,7 +26,7 @@ export interface IDraggableGridProps<DataType extends IBaseItemType> {
   draggable: boolean
   numColumns: number
   data: DataType[]
-  renderItem: (item: DataType, order: number) => React.ReactElement<any>
+  renderItem: (item: DataType, order: number, onPress: ()=>void, onLongPress: ()=>void) => React.ReactElement<any>
   style?: ViewStyle
   onUpdateLayout:(layout: { x: number; y: number; width: number; height: number }) => { gridItemWidth: number, gridItemHeight: number };
   dragStartAnimation?: StyleProp<any>
@@ -372,7 +372,7 @@ export const DraggableGrid = function<DataType extends IBaseItemType>(
         style={getBlockStyle(itemIndex)}
         dragStartAnimationStyle={getDragStartAnimation(itemIndex)}
         key={item.key}>
-        {props.renderItem(item.itemData, orderMap[item.key].order)}
+        {props.renderItem(item.itemData, orderMap[item.key].order, onBlockPress.bind(null, itemIndex), setActiveBlock.bind(null, itemIndex, item.itemData))}
       </Block>
     )
   })

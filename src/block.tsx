@@ -29,9 +29,7 @@ export const Block: FunctionComponent<BlockProps> = ({
   return (
     <Animated.View style={[styles.blockContainer, style, dragStartAnimationStyle]} {...panHandlers}>
       <Animated.View style={{width: '100%', height: '100%'}}>
-        <TouchableWithoutFeedback onPress={onPress} onLongPress={onLongPress}>
-          {children}
-        </TouchableWithoutFeedback>
+        {children}
       </Animated.View>
     </Animated.View>
   )
