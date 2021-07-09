@@ -1,3 +1,4 @@
+import { index } from 'd3'
 import * as React from 'react'
 import { useState, useEffect } from 'react'
 import {
@@ -28,7 +29,7 @@ export interface IDraggableGridProps<DataType extends IBaseItemType> {
   data: DataType[]
   renderItem: (item: DataType, order: number, onPress: ()=>void, onLongPress: ()=>void) => React.ReactElement<any>
   style?: ViewStyle
-  onUpdateLayout:(layout: { x: number; y: number; width: number; height: number }) => { gridItemWidth: number, gridItemHeight: number };
+  onUpdateLayout:(layout: { x: number; y: number; width: number; height: number }) => { numColumns: number, gridItemWidth: number, gridItemHeight: number };
   dragStartAnimation?: StyleProp<any>
   onItemPress?: (item: DataType) => void
   onDragStart?: (item: DataType) => void
@@ -74,12 +75,28 @@ export const DraggableGrid = function<DataType extends IBaseItemType>(
   const [activeItemIndex, setActiveItemIndex] = useState<undefined | number>()
 
   const assessGridSize = (event: IOnLayoutEvent) => {
-    if (!hadInitBlockSize) {
-      const { gridItemWidth, gridItemHeight } = props.onUpdateLayout(event.nativeEvent.layout);
+    if (!hadInitBlockSize || gridLayout.width !== event.nativeEvent.layout.width) {
+      const { numColumns, gridItemWidth, gridItemHeight } = props.onUpdateLayout(event.nativeEvent.layout);
       setBlockWidth(gridItemWidth)
       setBlockHeight(gridItemHeight)
       setGridLayout(event.nativeEvent.layout)
-      setHadInitBlockSize(true)
+      if (!hadInitBlockSize) {
+        setHadInitBlockSize(true)
+      }
+      else {
+        // Update the position information held internally because the layout has changed.
+        while(blockPositions.length !== 0) {
+          blockPositions.shift();
+        }
+        initBlockPositions(numColumns, gridItemWidth, gridItemHeight);
+
+        while(items.length !== 0) {
+          items.shift();
+        }
+        props.data.forEach((item, index) => {
+          addItem(item, index, numColumns, gridItemWidth, gridItemHeight);
+        });
+      }
     }
   }
   const [panResponderCapture, setPanResponderCapture] = useState(false)
@@ -96,17 +113,17 @@ export const DraggableGrid = function<DataType extends IBaseItemType>(
     onPanResponderRelease: onHandRelease,
   })
 
-  function initBlockPositions() {
+  function initBlockPositions(numColumns: number, blockWidth: number, blockHeight: number) {
     items.forEach((_, index) => {
-      blockPositions[index] = getBlockPositionByOrder(index)
+      blockPositions[index] = getBlockPositionByOrder(index, numColumns, blockWidth, blockHeight);
     })
   }
-  function getBlockPositionByOrder(order: number) {
+  function getBlockPositionByOrder(order: number, numColumns: number, blockWidth: number, blockHeight: number) {
     if (blockPositions[order]) {
       return blockPositions[order]
     }
-    const columnOnRow = order % props.numColumns
-    const y = blockHeight * Math.floor(order / props.numColumns)
+    const columnOnRow = order % numColumns
+    const y = blockHeight * Math.floor(order / numColumns)
     const x = columnOnRow * blockWidth
     return {
       x,
@@ -309,8 +326,8 @@ export const DraggableGrid = function<DataType extends IBaseItemType>(
       },
     }
   }
-  function addItem(item: DataType, index: number) {
-    blockPositions.push(getBlockPositionByOrder(items.length))
+  function addItem(item: DataType, index: number, numColumns: number, blockWidth: number, blockHeight: number) {
+    blockPositions.push(getBlockPositionByOrder(items.length, numColumns, blockWidth, blockHeight))
     orderMap[item.key] = {
       order: index,
     }
@@ -318,7 +335,7 @@ export const DraggableGrid = function<DataType extends IBaseItemType>(
     items.push({
       key: item.key,
       itemData: item,
-      currentPosition: new Animated.ValueXY(getBlockPositionByOrder(index)),
+      currentPosition: new Animated.ValueXY(getBlockPositionByOrder(index, numColumns, blockWidth, blockHeight)),
     })
   }
 
@@ -341,7 +358,7 @@ export const DraggableGrid = function<DataType extends IBaseItemType>(
         }
         itemMap[item.key] = item
       } else {
-        addItem(item, index)
+        addItem(item, index, props.numColumns, blockWidth, blockHeight)
       }
     })
     const deleteItems = differenceBy(items, props.data, 'key')
@@ -354,7 +371,7 @@ export const DraggableGrid = function<DataType extends IBaseItemType>(
   }, [activeItemIndex])
   useEffect(() => {
     if (hadInitBlockSize) {
-      initBlockPositions()
+      initBlockPositions(props.numColumns, blockWidth, blockHeight)
     }
   }, [gridLayout])
   useEffect(() => {
