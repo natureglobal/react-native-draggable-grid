@@ -1,4 +1,3 @@
-import { index } from 'd3'
 import * as React from 'react'
 import { useState, useEffect } from 'react'
 import {
@@ -9,6 +8,8 @@ import {
   GestureResponderEvent,
   PanResponderGestureState,
   ViewStyle,
+  View,
+  Platform,
 } from 'react-native'
 import { Block } from './block'
 import { findKey, findIndex, differenceBy } from './utils'
@@ -25,6 +26,7 @@ interface IBaseItemType {
 
 export interface IDraggableGridProps<DataType extends IBaseItemType> {
   draggable: boolean
+  rootMeasureInWindow: {ox: number, oy: number, width: number, height: number}
   numColumns: number
   data: DataType[]
   renderItem: (item: DataType, order: number, onPress: ()=>void, onLongPress: ()=>void) => React.ReactElement<any>
@@ -129,10 +131,6 @@ export const DraggableGrid = function<DataType extends IBaseItemType>(
       x,
       y,
     }
-  }
-  function resetGridHeight() {
-    const rowCount = Math.ceil(props.data.length / props.numColumns)
-    gridHeight.setValue(rowCount * blockHeight)
   }
   function onBlockPress(itemIndex: number) {
     props.onItemPress && props.onItemPress(items[itemIndex].itemData)
@@ -374,9 +372,29 @@ export const DraggableGrid = function<DataType extends IBaseItemType>(
       initBlockPositions(props.numColumns, blockWidth, blockHeight)
     }
   }, [gridLayout])
+
+  const animatedViewRef = React.useRef<View>(null);
+  const calcGridHeight = Platform.select({
+    'android': () => {
+      // In Android,
+      // the griditem will not be displayed correctly outside of Animated.View when dragged,
+      // so Animated.View to expand to fill the screen.
+      animatedViewRef.current?.measureInWindow((ox, oy, width, height) => {
+        const minHeight = props.rootMeasureInWindow.height - oy;
+        const rowCount = Math.ceil(props.data.length / props.numColumns);
+        const h = minHeight < (rowCount * blockHeight) ? rowCount * blockHeight : minHeight;
+        gridHeight.setValue(h)
+      });
+    },
+    'default': () => {
+      const rowCount = Math.ceil(props.data.length / props.numColumns);
+      gridHeight.setValue(rowCount * blockHeight)
+    },
+  });
   useEffect(() => {
-    resetGridHeight()
-  })
+    calcGridHeight();
+  });
+
   if (hadInitBlockSize) {
     diffData()
   }
@@ -396,6 +414,7 @@ export const DraggableGrid = function<DataType extends IBaseItemType>(
 
   return (
     <Animated.View
+      ref={animatedViewRef}
       style={[
         styles.draggableGrid,
         props.style,
