@@ -18,7 +18,7 @@ interface BlockProps {
   panHandlers: GestureResponderHandlers
 }
 
-export const Block: FunctionComponent<BlockProps> = ({
+export const Block: FunctionComponent<React.PropsWithChildren<BlockProps>> = ({
   style,
   dragStartAnimationStyle,
   onPress,
