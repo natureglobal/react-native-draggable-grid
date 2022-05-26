@@ -5,7 +5,7 @@
     "sortable",
     "grid"
   ],
-  "version": "2.1.3+patch",
+  "version": "2.1.3-patched2",
   "description": "A draggable grid for react native",
   "main": "src/index.ts",
   "types": "src/index.ts",
